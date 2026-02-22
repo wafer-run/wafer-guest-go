@@ -1,6 +1,6 @@
-// Package waffle provides the guest SDK for writing WAFFLE blocks that compile
+// Package wafer provides the SDK for writing WAFER blocks that compile
 // to WebAssembly (GOOS=wasip1 GOARCH=wasm). Blocks built with this SDK run
-// inside the WAFFLE runtime and communicate with the host through a well-defined
+// inside the WAFER runtime and communicate with the host through a well-defined
 // memory protocol using JSON serialization.
 //
 // Build blocks with:
@@ -11,12 +11,12 @@
 //
 //	package main
 //
-//	import waffle "github.com/anthropics/waffle-guest-go"
+//	import wafer "github.com/anthropics/wafer-sdk-go"
 //
 //	type MyBlock struct{}
 //
-//	func (b *MyBlock) Info() waffle.BlockInfo {
-//	    return waffle.BlockInfo{
+//	func (b *MyBlock) Info() wafer.BlockInfo {
+//	    return wafer.BlockInfo{
 //	        Name:      "@example/myblock",
 //	        Version:   "1.0.0",
 //	        Interface: "processor@v1",
@@ -24,25 +24,25 @@
 //	    }
 //	}
 //
-//	func (b *MyBlock) Handle(ctx *waffle.Context, msg *waffle.Message) *waffle.Result {
-//	    return waffle.ContinueResult()
+//	func (b *MyBlock) Handle(ctx *wafer.Context, msg *wafer.Message) *wafer.Result {
+//	    return wafer.ContinueResult()
 //	}
 //
-//	func (b *MyBlock) Lifecycle(ctx *waffle.Context, event waffle.LifecycleEvent) error {
+//	func (b *MyBlock) Lifecycle(ctx *wafer.Context, event wafer.LifecycleEvent) error {
 //	    return nil
 //	}
 //
 //	func main() {
-//	    waffle.Register(&MyBlock{})
+//	    wafer.Register(&MyBlock{})
 //	}
-package waffle
+package wafer
 
 import (
 	"encoding/json"
 	"unsafe"
 )
 
-// Block is the interface that every WAFFLE guest block must implement. The
+// Block is the interface that every WAFER block must implement. The
 // runtime calls these methods through the exported WASM functions.
 type Block interface {
 	// Info returns the block's identity, interface declaration, and instance
@@ -79,13 +79,13 @@ var pinnedData [][]byte
 // Example usage:
 //
 //	func main() {
-//	    waffle.Register(&MyBlock{})
+//	    wafer.Register(&MyBlock{})
 //	}
 func Register(block Block) {
 	registeredBlock = block
 }
 
-// Exported WASM functions. These are called by the WAFFLE runtime host.
+// Exported WASM functions. These are called by the WAFER runtime host.
 // They use the ptr+len memory protocol: input data is written by the host
 // into memory allocated by malloc, and output data is returned as a packed
 // i64 with the pointer in the high 32 bits and the length in the low 32 bits.

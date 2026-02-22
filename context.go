@@ -1,33 +1,33 @@
-package waffle
+package wafer
 
 import (
 	"encoding/json"
 	"unsafe"
 )
 
-// Host function imports provided by the WAFFLE runtime.
+// Host function imports provided by the WAFER runtime.
 // These are the raw WASM import signatures using the ptr+len memory protocol.
 
-//go:wasmimport waffle send
+//go:wasmimport wafer send
 func hostSend(ptr uint32, len uint32) uint64
 
-//go:wasmimport waffle capabilities
+//go:wasmimport wafer capabilities
 func hostCapabilities() uint64
 
-//go:wasmimport waffle is_cancelled
+//go:wasmimport wafer is_cancelled
 func hostIsCancelled() uint32
 
 // Context wraps the WASM host imports and provides a high-level interface for
-// blocks to interact with the WAFFLE runtime. It is the guest-side counterpart
+// blocks to interact with the WAFER runtime. It is the guest-side counterpart
 // of the runtime's Context interface.
 type Context struct{}
 
-// Send sends a message to the WAFFLE runtime and returns the result. This is
+// Send sends a message to the WAFER runtime and returns the result. This is
 // the fundamental mechanism through which blocks access runtime capabilities
 // such as logging, configuration, database access, and network requests.
 //
 // The message is serialized to JSON in the wire format, written to linear
-// memory, and passed to the host via the waffle.send import. The host returns
+// memory, and passed to the host via the wafer.send import. The host returns
 // a packed i64 (ptr in high 32 bits, len in low 32 bits) pointing to the
 // JSON-encoded result.
 func (c *Context) Send(msg *Message) *Result {
@@ -36,7 +36,7 @@ func (c *Context) Send(msg *Message) *Result {
 	if err != nil {
 		return &Result{
 			Action: ActionError,
-			Err: &WaffleError{
+			Err: &WaferError{
 				Code:    "internal",
 				Message: "failed to marshal message: " + err.Error(),
 			},
@@ -59,7 +59,7 @@ func (c *Context) Send(msg *Message) *Result {
 	if err := json.Unmarshal(resultData, &wresult); err != nil {
 		return &Result{
 			Action: ActionError,
-			Err: &WaffleError{
+			Err: &WaferError{
 				Code:    "internal",
 				Message: "failed to unmarshal result: " + err.Error(),
 			},

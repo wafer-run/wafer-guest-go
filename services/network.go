@@ -3,18 +3,18 @@ package services
 import (
 	"encoding/json"
 
-	waffle "github.com/anthropics/waffle-guest-go"
+	wafer "github.com/anthropics/wafer-sdk-go"
 )
 
-// NetworkClient provides typed access to the WAFFLE network capability for
+// NetworkClient provides typed access to the WAFER network capability for
 // making outbound HTTP requests. All requests are proxied through the runtime
 // for security and observability.
 type NetworkClient struct {
-	ctx *waffle.Context
+	ctx *wafer.Context
 }
 
 // NewNetworkClient creates a new NetworkClient bound to the given context.
-func NewNetworkClient(ctx *waffle.Context) *NetworkClient {
+func NewNetworkClient(ctx *wafer.Context) *NetworkClient {
 	return &NetworkClient{ctx: ctx}
 }
 
@@ -54,12 +54,12 @@ type NetworkResponse struct {
 func (n *NetworkClient) Do(req *NetworkRequest) (*NetworkResponse, error) {
 	data, err := json.Marshal(req)
 	if err != nil {
-		return nil, &waffle.WaffleError{
+		return nil, &wafer.WaferError{
 			Code:    "internal",
 			Message: "failed to marshal network request: " + err.Error(),
 		}
 	}
-	msg := &waffle.Message{
+	msg := &wafer.Message{
 		Kind: "svc.network.do",
 		Data: data,
 		Meta: map[string]string{
@@ -68,18 +68,18 @@ func (n *NetworkClient) Do(req *NetworkRequest) (*NetworkResponse, error) {
 		},
 	}
 	result := n.ctx.Send(msg)
-	if result.Action == waffle.ActionError && result.Err != nil {
+	if result.Action == wafer.ActionError && result.Err != nil {
 		return nil, result.Err
 	}
 	if result.Response == nil || len(result.Response.Data) == 0 {
-		return nil, &waffle.WaffleError{
+		return nil, &wafer.WaferError{
 			Code:    "internal",
 			Message: "empty network response",
 		}
 	}
 	var resp NetworkResponse
 	if err := json.Unmarshal(result.Response.Data, &resp); err != nil {
-		return nil, &waffle.WaffleError{
+		return nil, &wafer.WaferError{
 			Code:    "internal",
 			Message: "failed to unmarshal network response: " + err.Error(),
 		}

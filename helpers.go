@@ -1,4 +1,4 @@
-package waffle
+package wafer
 
 import (
 	"encoding/json"
@@ -25,7 +25,7 @@ func DropResult() *Result {
 }
 
 // ErrorResult returns a Result that short-circuits the chain with the given error.
-func ErrorResult(err *WaffleError) *Result {
+func ErrorResult(err *WaferError) *Result {
 	return &Result{Action: ActionError, Err: err}
 }
 
@@ -60,7 +60,7 @@ func JsonRespond(v any) *Result {
 func Error(code, message string) *Result {
 	return &Result{
 		Action: ActionError,
-		Err: &WaffleError{
+		Err: &WaferError{
 			Code:    code,
 			Message: message,
 		},
@@ -71,7 +71,7 @@ func Error(code, message string) *Result {
 func ErrorWithMeta(code, message string, meta map[string]string) *Result {
 	return &Result{
 		Action: ActionError,
-		Err: &WaffleError{
+		Err: &WaferError{
 			Code:    code,
 			Message: message,
 			Meta:    meta,
@@ -79,7 +79,7 @@ func ErrorWithMeta(code, message string, meta map[string]string) *Result {
 	}
 }
 
-// Convenience error constructors for common error codes defined in the WAFFLE
+// Convenience error constructors for common error codes defined in the WAFER
 // specification. These follow the gRPC status code conventions for
 // interoperability.
 
@@ -172,7 +172,7 @@ func JsonRespondStatus(status int, v any) *Result {
 func ErrorStatus(status int, code, message string) *Result {
 	return &Result{
 		Action: ActionError,
-		Err: &WaffleError{
+		Err: &WaferError{
 			Code:    code,
 			Message: message,
 			Meta: map[string]string{
@@ -187,7 +187,7 @@ func ErrorStatus(status int, code, message string) *Result {
 //
 // Example usage:
 //
-//	result := waffle.NewResponseBuilder().
+//	result := wafer.NewResponseBuilder().
 //	    JSON(map[string]string{"status": "ok"}).
 //	    Meta("x-request-id", "abc123").
 //	    Respond()

@@ -3,18 +3,18 @@ package services
 import (
 	"encoding/json"
 
-	waffle "github.com/anthropics/waffle-guest-go"
+	wafer "github.com/anthropics/wafer-sdk-go"
 )
 
-// StorageClient provides typed access to the WAFFLE storage capability for
+// StorageClient provides typed access to the WAFER storage capability for
 // binary object storage operations. All operations are sent as messages
 // through the context.
 type StorageClient struct {
-	ctx *waffle.Context
+	ctx *wafer.Context
 }
 
 // NewStorageClient creates a new StorageClient bound to the given context.
-func NewStorageClient(ctx *waffle.Context) *StorageClient {
+func NewStorageClient(ctx *wafer.Context) *StorageClient {
 	return &StorageClient{ctx: ctx}
 }
 
@@ -24,8 +24,8 @@ func NewStorageClient(ctx *waffle.Context) *StorageClient {
 // Message kind: "svc.storage.put"
 // Meta: [["bucket", bucket], ["key", key]]
 // Data: content bytes
-func (s *StorageClient) Put(bucket, key string, content []byte) (*waffle.Result, error) {
-	msg := &waffle.Message{
+func (s *StorageClient) Put(bucket, key string, content []byte) (*wafer.Result, error) {
+	msg := &wafer.Message{
 		Kind: "svc.storage.put",
 		Data: content,
 		Meta: map[string]string{
@@ -34,7 +34,7 @@ func (s *StorageClient) Put(bucket, key string, content []byte) (*waffle.Result,
 		},
 	}
 	result := s.ctx.Send(msg)
-	if result.Action == waffle.ActionError && result.Err != nil {
+	if result.Action == wafer.ActionError && result.Err != nil {
 		return result, result.Err
 	}
 	return result, nil
@@ -46,7 +46,7 @@ func (s *StorageClient) Put(bucket, key string, content []byte) (*waffle.Result,
 // Message kind: "svc.storage.get"
 // Meta: [["bucket", bucket], ["key", key]]
 func (s *StorageClient) Get(bucket, key string) ([]byte, error) {
-	msg := &waffle.Message{
+	msg := &wafer.Message{
 		Kind: "svc.storage.get",
 		Meta: map[string]string{
 			"bucket": bucket,
@@ -54,7 +54,7 @@ func (s *StorageClient) Get(bucket, key string) ([]byte, error) {
 		},
 	}
 	result := s.ctx.Send(msg)
-	if result.Action == waffle.ActionError && result.Err != nil {
+	if result.Action == wafer.ActionError && result.Err != nil {
 		return nil, result.Err
 	}
 	if result.Response == nil {
@@ -67,8 +67,8 @@ func (s *StorageClient) Get(bucket, key string) ([]byte, error) {
 //
 // Message kind: "svc.storage.delete"
 // Meta: [["bucket", bucket], ["key", key]]
-func (s *StorageClient) Delete(bucket, key string) (*waffle.Result, error) {
-	msg := &waffle.Message{
+func (s *StorageClient) Delete(bucket, key string) (*wafer.Result, error) {
+	msg := &wafer.Message{
 		Kind: "svc.storage.delete",
 		Meta: map[string]string{
 			"bucket": bucket,
@@ -76,7 +76,7 @@ func (s *StorageClient) Delete(bucket, key string) (*waffle.Result, error) {
 		},
 	}
 	result := s.ctx.Send(msg)
-	if result.Action == waffle.ActionError && result.Err != nil {
+	if result.Action == wafer.ActionError && result.Err != nil {
 		return result, result.Err
 	}
 	return result, nil
@@ -94,14 +94,14 @@ type StorageEntry struct {
 // Message kind: "svc.storage.list"
 // Meta: [["bucket", bucket]]
 func (s *StorageClient) List(bucket string) ([]StorageEntry, error) {
-	msg := &waffle.Message{
+	msg := &wafer.Message{
 		Kind: "svc.storage.list",
 		Meta: map[string]string{
 			"bucket": bucket,
 		},
 	}
 	result := s.ctx.Send(msg)
-	if result.Action == waffle.ActionError && result.Err != nil {
+	if result.Action == wafer.ActionError && result.Err != nil {
 		return nil, result.Err
 	}
 	if result.Response == nil || len(result.Response.Data) == 0 {
@@ -109,7 +109,7 @@ func (s *StorageClient) List(bucket string) ([]StorageEntry, error) {
 	}
 	var entries []StorageEntry
 	if err := json.Unmarshal(result.Response.Data, &entries); err != nil {
-		return nil, &waffle.WaffleError{
+		return nil, &wafer.WaferError{
 			Code:    "internal",
 			Message: "failed to unmarshal storage list: " + err.Error(),
 		}

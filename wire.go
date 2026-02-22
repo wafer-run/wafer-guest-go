@@ -1,4 +1,4 @@
-package waffle
+package wafer
 
 import (
 	"encoding/base64"
@@ -6,7 +6,7 @@ import (
 
 // Wire format types for the WASM boundary. These types define the JSON
 // serialization format used to pass data between the guest WASM module and
-// the WAFFLE host runtime. Binary data is base64-encoded and metadata is
+// the WAFER host runtime. Binary data is base64-encoded and metadata is
 // represented as arrays of two-element string arrays for cross-language
 // compatibility.
 
@@ -45,7 +45,7 @@ type WasmResponse struct {
 	Meta [][]string `json:"meta"`
 }
 
-// WasmError is the wire format for a WaffleError.
+// WasmError is the wire format for a WaferError.
 type WasmError struct {
 	// Code is the machine-readable error code.
 	Code string `json:"code"`
@@ -175,8 +175,8 @@ func wasmToResponse(wr *WasmResponse) *Response {
 	return r
 }
 
-// errorToWasm converts a WaffleError to its wire format representation.
-func errorToWasm(e *WaffleError) *WasmError {
+// errorToWasm converts a WaferError to its wire format representation.
+func errorToWasm(e *WaferError) *WasmError {
 	we := &WasmError{
 		Code:    e.Code,
 		Message: e.Message,
@@ -187,9 +187,9 @@ func errorToWasm(e *WaffleError) *WasmError {
 	return we
 }
 
-// wasmToError converts a wire format WasmError to a WaffleError.
-func wasmToError(we *WasmError) *WaffleError {
-	e := &WaffleError{
+// wasmToError converts a wire format WasmError to a WaferError.
+func wasmToError(we *WasmError) *WaferError {
+	e := &WaferError{
 		Code:    we.Code,
 		Message: we.Message,
 	}

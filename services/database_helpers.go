@@ -3,7 +3,7 @@ package services
 import (
 	"encoding/json"
 
-	waffle "github.com/anthropics/waffle-guest-go"
+	wafer "github.com/anthropics/wafer-sdk-go"
 )
 
 // FilterOp represents a filter comparison operator.
@@ -63,13 +63,13 @@ func (d *DatabaseClient) ListWithOptions(collection string, opts *ListOptions) (
 		var err error
 		data, err = json.Marshal(opts)
 		if err != nil {
-			return nil, &waffle.WaffleError{
+			return nil, &wafer.WaferError{
 				Code:    "internal",
 				Message: "failed to marshal list options: " + err.Error(),
 			}
 		}
 	}
-	msg := &waffle.Message{
+	msg := &wafer.Message{
 		Kind: "svc.database.list",
 		Data: data,
 		Meta: map[string]string{
@@ -77,7 +77,7 @@ func (d *DatabaseClient) ListWithOptions(collection string, opts *ListOptions) (
 		},
 	}
 	result := d.ctx.Send(msg)
-	if result.Action == waffle.ActionError && result.Err != nil {
+	if result.Action == wafer.ActionError && result.Err != nil {
 		return nil, result.Err
 	}
 	if result.Response == nil || len(result.Response.Data) == 0 {
@@ -85,7 +85,7 @@ func (d *DatabaseClient) ListWithOptions(collection string, opts *ListOptions) (
 	}
 	var rl RecordList
 	if err := json.Unmarshal(result.Response.Data, &rl); err != nil {
-		return nil, &waffle.WaffleError{
+		return nil, &wafer.WaferError{
 			Code:    "internal",
 			Message: "failed to unmarshal record list: " + err.Error(),
 		}
@@ -109,14 +109,14 @@ func (d *DatabaseClient) GetRecord(collection, id string) (*Record, error) {
 		return nil, err
 	}
 	if result.Response == nil || len(result.Response.Data) == 0 {
-		return nil, &waffle.WaffleError{
+		return nil, &wafer.WaferError{
 			Code:    "not_found",
 			Message: "record not found in " + collection + ": " + id,
 		}
 	}
 	var r Record
 	if err := json.Unmarshal(result.Response.Data, &r); err != nil {
-		return nil, &waffle.WaffleError{
+		return nil, &wafer.WaferError{
 			Code:    "internal",
 			Message: "failed to unmarshal record: " + err.Error(),
 		}
@@ -138,7 +138,7 @@ func (d *DatabaseClient) GetByField(collection, field, value string) (*Record, e
 		return nil, err
 	}
 	if len(rl.Records) == 0 {
-		return nil, &waffle.WaffleError{
+		return nil, &wafer.WaferError{
 			Code:    "not_found",
 			Message: "record not found in " + collection + " where " + field + " = " + value,
 		}
@@ -153,13 +153,13 @@ func (d *DatabaseClient) Count(collection string, filters ...Filter) (int64, err
 		var err error
 		data, err = json.Marshal(filters)
 		if err != nil {
-			return 0, &waffle.WaffleError{
+			return 0, &wafer.WaferError{
 				Code:    "internal",
 				Message: "failed to marshal filters: " + err.Error(),
 			}
 		}
 	}
-	msg := &waffle.Message{
+	msg := &wafer.Message{
 		Kind: "svc.database.count",
 		Data: data,
 		Meta: map[string]string{
@@ -167,7 +167,7 @@ func (d *DatabaseClient) Count(collection string, filters ...Filter) (int64, err
 		},
 	}
 	result := d.ctx.Send(msg)
-	if result.Action == waffle.ActionError && result.Err != nil {
+	if result.Action == wafer.ActionError && result.Err != nil {
 		return 0, result.Err
 	}
 	if result.Response == nil || len(result.Response.Data) == 0 {
@@ -175,7 +175,7 @@ func (d *DatabaseClient) Count(collection string, filters ...Filter) (int64, err
 	}
 	var count int64
 	if err := json.Unmarshal(result.Response.Data, &count); err != nil {
-		return 0, &waffle.WaffleError{
+		return 0, &wafer.WaferError{
 			Code:    "internal",
 			Message: "failed to unmarshal count: " + err.Error(),
 		}
@@ -191,17 +191,17 @@ func (d *DatabaseClient) QueryRaw(query string, args ...interface{}) ([]Record, 
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
-		return nil, &waffle.WaffleError{
+		return nil, &wafer.WaferError{
 			Code:    "internal",
 			Message: "failed to marshal query: " + err.Error(),
 		}
 	}
-	msg := &waffle.Message{
+	msg := &wafer.Message{
 		Kind: "svc.database.query_raw",
 		Data: data,
 	}
 	result := d.ctx.Send(msg)
-	if result.Action == waffle.ActionError && result.Err != nil {
+	if result.Action == wafer.ActionError && result.Err != nil {
 		return nil, result.Err
 	}
 	if result.Response == nil || len(result.Response.Data) == 0 {
@@ -209,7 +209,7 @@ func (d *DatabaseClient) QueryRaw(query string, args ...interface{}) ([]Record, 
 	}
 	var records []Record
 	if err := json.Unmarshal(result.Response.Data, &records); err != nil {
-		return nil, &waffle.WaffleError{
+		return nil, &wafer.WaferError{
 			Code:    "internal",
 			Message: "failed to unmarshal records: " + err.Error(),
 		}
@@ -225,17 +225,17 @@ func (d *DatabaseClient) ExecRaw(query string, args ...interface{}) (int64, erro
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
-		return 0, &waffle.WaffleError{
+		return 0, &wafer.WaferError{
 			Code:    "internal",
 			Message: "failed to marshal query: " + err.Error(),
 		}
 	}
-	msg := &waffle.Message{
+	msg := &wafer.Message{
 		Kind: "svc.database.exec_raw",
 		Data: data,
 	}
 	result := d.ctx.Send(msg)
-	if result.Action == waffle.ActionError && result.Err != nil {
+	if result.Action == wafer.ActionError && result.Err != nil {
 		return 0, result.Err
 	}
 	if result.Response == nil || len(result.Response.Data) == 0 {
@@ -243,7 +243,7 @@ func (d *DatabaseClient) ExecRaw(query string, args ...interface{}) (int64, erro
 	}
 	var affected int64
 	if err := json.Unmarshal(result.Response.Data, &affected); err != nil {
-		return 0, &waffle.WaffleError{
+		return 0, &wafer.WaferError{
 			Code:    "internal",
 			Message: "failed to unmarshal affected rows: " + err.Error(),
 		}

@@ -1,4 +1,4 @@
-// Package services provides typed client wrappers for WAFFLE runtime
+// Package services provides typed client wrappers for WAFER runtime
 // capabilities. Each client sends structured messages through the Context.Send
 // method and returns parsed results.
 package services
@@ -6,18 +6,18 @@ package services
 import (
 	"encoding/json"
 
-	waffle "github.com/anthropics/waffle-guest-go"
+	wafer "github.com/anthropics/wafer-sdk-go"
 )
 
-// DatabaseClient provides typed access to the WAFFLE database capability.
+// DatabaseClient provides typed access to the WAFER database capability.
 // All operations are sent as messages through the context and handled by the
 // runtime's database service.
 type DatabaseClient struct {
-	ctx *waffle.Context
+	ctx *wafer.Context
 }
 
 // NewDatabaseClient creates a new DatabaseClient bound to the given context.
-func NewDatabaseClient(ctx *waffle.Context) *DatabaseClient {
+func NewDatabaseClient(ctx *wafer.Context) *DatabaseClient {
 	return &DatabaseClient{ctx: ctx}
 }
 
@@ -26,8 +26,8 @@ func NewDatabaseClient(ctx *waffle.Context) *DatabaseClient {
 //
 // Message kind: "svc.database.get"
 // Meta: [["collection", collection], ["id", id]]
-func (d *DatabaseClient) Get(collection, id string) (*waffle.Result, error) {
-	msg := &waffle.Message{
+func (d *DatabaseClient) Get(collection, id string) (*wafer.Result, error) {
+	msg := &wafer.Message{
 		Kind: "svc.database.get",
 		Meta: map[string]string{
 			"collection": collection,
@@ -35,7 +35,7 @@ func (d *DatabaseClient) Get(collection, id string) (*waffle.Result, error) {
 		},
 	}
 	result := d.ctx.Send(msg)
-	if result.Action == waffle.ActionError && result.Err != nil {
+	if result.Action == wafer.ActionError && result.Err != nil {
 		return result, result.Err
 	}
 	return result, nil
@@ -49,7 +49,7 @@ func (d *DatabaseClient) GetInto(collection, id string, v any) error {
 		return err
 	}
 	if result.Response == nil || len(result.Response.Data) == 0 {
-		return &waffle.WaffleError{
+		return &wafer.WaferError{
 			Code:    "not_found",
 			Message: "record not found in " + collection + ": " + id,
 		}
@@ -62,15 +62,15 @@ func (d *DatabaseClient) GetInto(collection, id string, v any) error {
 //
 // Message kind: "svc.database.list"
 // Meta: [["collection", collection]]
-func (d *DatabaseClient) List(collection string) (*waffle.Result, error) {
-	msg := &waffle.Message{
+func (d *DatabaseClient) List(collection string) (*wafer.Result, error) {
+	msg := &wafer.Message{
 		Kind: "svc.database.list",
 		Meta: map[string]string{
 			"collection": collection,
 		},
 	}
 	result := d.ctx.Send(msg)
-	if result.Action == waffle.ActionError && result.Err != nil {
+	if result.Action == wafer.ActionError && result.Err != nil {
 		return result, result.Err
 	}
 	return result, nil
@@ -95,15 +95,15 @@ func (d *DatabaseClient) ListInto(collection string, v any) error {
 // Message kind: "svc.database.create"
 // Meta: [["collection", collection]]
 // Data: JSON-encoded record
-func (d *DatabaseClient) Create(collection string, record any) (*waffle.Result, error) {
+func (d *DatabaseClient) Create(collection string, record any) (*wafer.Result, error) {
 	data, err := json.Marshal(record)
 	if err != nil {
-		return nil, &waffle.WaffleError{
+		return nil, &wafer.WaferError{
 			Code:    "internal",
 			Message: "failed to marshal record: " + err.Error(),
 		}
 	}
-	msg := &waffle.Message{
+	msg := &wafer.Message{
 		Kind: "svc.database.create",
 		Data: data,
 		Meta: map[string]string{
@@ -111,7 +111,7 @@ func (d *DatabaseClient) Create(collection string, record any) (*waffle.Result, 
 		},
 	}
 	result := d.ctx.Send(msg)
-	if result.Action == waffle.ActionError && result.Err != nil {
+	if result.Action == wafer.ActionError && result.Err != nil {
 		return result, result.Err
 	}
 	return result, nil
@@ -123,15 +123,15 @@ func (d *DatabaseClient) Create(collection string, record any) (*waffle.Result, 
 // Message kind: "svc.database.update"
 // Meta: [["collection", collection], ["id", id]]
 // Data: JSON-encoded record
-func (d *DatabaseClient) Update(collection, id string, record any) (*waffle.Result, error) {
+func (d *DatabaseClient) Update(collection, id string, record any) (*wafer.Result, error) {
 	data, err := json.Marshal(record)
 	if err != nil {
-		return nil, &waffle.WaffleError{
+		return nil, &wafer.WaferError{
 			Code:    "internal",
 			Message: "failed to marshal record: " + err.Error(),
 		}
 	}
-	msg := &waffle.Message{
+	msg := &wafer.Message{
 		Kind: "svc.database.update",
 		Data: data,
 		Meta: map[string]string{
@@ -140,7 +140,7 @@ func (d *DatabaseClient) Update(collection, id string, record any) (*waffle.Resu
 		},
 	}
 	result := d.ctx.Send(msg)
-	if result.Action == waffle.ActionError && result.Err != nil {
+	if result.Action == wafer.ActionError && result.Err != nil {
 		return result, result.Err
 	}
 	return result, nil
@@ -150,8 +150,8 @@ func (d *DatabaseClient) Update(collection, id string, record any) (*waffle.Resu
 //
 // Message kind: "svc.database.delete"
 // Meta: [["collection", collection], ["id", id]]
-func (d *DatabaseClient) Delete(collection, id string) (*waffle.Result, error) {
-	msg := &waffle.Message{
+func (d *DatabaseClient) Delete(collection, id string) (*wafer.Result, error) {
+	msg := &wafer.Message{
 		Kind: "svc.database.delete",
 		Meta: map[string]string{
 			"collection": collection,
@@ -159,7 +159,7 @@ func (d *DatabaseClient) Delete(collection, id string) (*waffle.Result, error) {
 		},
 	}
 	result := d.ctx.Send(msg)
-	if result.Action == waffle.ActionError && result.Err != nil {
+	if result.Action == wafer.ActionError && result.Err != nil {
 		return result, result.Err
 	}
 	return result, nil

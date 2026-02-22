@@ -1,6 +1,6 @@
-package waffle
+package wafer
 
-// Message represents a message flowing through a WAFFLE chain. A message
+// Message represents a message flowing through a WAFER chain. A message
 // contains a kind identifier, binary payload data, and string metadata.
 type Message struct {
 	// Kind identifies the type of message, e.g. "user.create" or "order.process".
@@ -95,11 +95,11 @@ type Response struct {
 	Meta map[string]string
 }
 
-// WaffleError represents an error returned by a block. It contains a machine-
+// WaferError represents an error returned by a block. It contains a machine-
 // readable code, a human-readable message, and optional metadata.
-type WaffleError struct {
+type WaferError struct {
 	// Code is a machine-readable error code, e.g. "invalid_argument" or
-	// "not_found". See the WAFFLE specification for recommended codes.
+	// "not_found". See the WAFER specification for recommended codes.
 	Code string
 
 	// Message is a human-readable description of the error.
@@ -109,9 +109,9 @@ type WaffleError struct {
 	Meta map[string]string
 }
 
-// Error implements the error interface so WaffleError can be used as a
+// Error implements the error interface so WaferError can be used as a
 // standard Go error.
-func (e *WaffleError) Error() string {
+func (e *WaferError) Error() string {
 	return e.Code + ": " + e.Message
 }
 
@@ -125,7 +125,7 @@ type Result struct {
 	Response *Response
 
 	// Err holds the error data when Action is ActionError.
-	Err *WaffleError
+	Err *WaferError
 }
 
 // InstanceMode controls how many instances of a block are created and when.
