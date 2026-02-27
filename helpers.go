@@ -5,34 +5,32 @@ import (
 	"strconv"
 )
 
-// Convenience constructors for common Result values.
+// Convenience constructors for common BlockResult values.
 
-// ContinueResult returns a Result that tells the runtime to pass the message
-// to the next block in the chain.
-func ContinueResult() *Result {
-	return &Result{Action: Continue}
+// ContinueResult returns a BlockResult that passes the message to the next block.
+func ContinueResult() *BlockResult {
+	return &BlockResult{Action: ActionContinue}
 }
 
-// RespondResult returns a Result that short-circuits the chain and returns
-// the given response to the caller.
-func RespondResult(resp *Response) *Result {
-	return &Result{Action: Respond, Response: resp}
+// RespondResult returns a BlockResult that short-circuits with a response.
+func RespondResult(resp *Response) *BlockResult {
+	return &BlockResult{Action: ActionRespond, Response: resp}
 }
 
-// DropResult returns a Result that ends the chain silently with no response.
-func DropResult() *Result {
-	return &Result{Action: Drop}
+// DropResult returns a BlockResult that ends the chain silently.
+func DropResult() *BlockResult {
+	return &BlockResult{Action: ActionDrop}
 }
 
-// ErrorResult returns a Result that short-circuits the chain with the given error.
-func ErrorResult(err *WaferError) *Result {
-	return &Result{Action: ActionError, Err: err}
+// ErrorResult returns a BlockResult that short-circuits with an error.
+func ErrorResult(err *WaferError) *BlockResult {
+	return &BlockResult{Action: ActionError, Error: err}
 }
 
 // RespondData creates a Respond result with the given data and optional metadata.
-func RespondData(data []byte, meta map[string]string) *Result {
-	return &Result{
-		Action: Respond,
+func RespondData(data []byte, meta map[string]string) *BlockResult {
+	return &BlockResult{
+		Action: ActionRespond,
 		Response: &Response{
 			Data: data,
 			Meta: meta,
@@ -40,15 +38,14 @@ func RespondData(data []byte, meta map[string]string) *Result {
 	}
 }
 
-// JsonRespond creates a Respond result by JSON-encoding the given value. If
-// marshaling fails, an internal error result is returned instead.
-func JsonRespond(v any) *Result {
+// JsonRespond creates a Respond result by JSON-encoding the given value.
+func JsonRespond(v any) *BlockResult {
 	data, err := json.Marshal(v)
 	if err != nil {
 		return ErrInternal("failed to marshal response: " + err.Error())
 	}
-	return &Result{
-		Action: Respond,
+	return &BlockResult{
+		Action: ActionRespond,
 		Response: &Response{
 			Data: data,
 			Meta: map[string]string{"content-type": "application/json"},
@@ -56,22 +53,22 @@ func JsonRespond(v any) *Result {
 	}
 }
 
-// Error creates an error Result with the given code and message.
-func Error(code, message string) *Result {
-	return &Result{
+// Error creates an error BlockResult with the given code and message.
+func Error(code, message string) *BlockResult {
+	return &BlockResult{
 		Action: ActionError,
-		Err: &WaferError{
+		Error: &WaferError{
 			Code:    code,
 			Message: message,
 		},
 	}
 }
 
-// ErrorWithMeta creates an error Result with the given code, message, and metadata.
-func ErrorWithMeta(code, message string, meta map[string]string) *Result {
-	return &Result{
+// ErrorWithMeta creates an error BlockResult with code, message, and metadata.
+func ErrorWithMeta(code, message string, meta map[string]string) *BlockResult {
+	return &BlockResult{
 		Action: ActionError,
-		Err: &WaferError{
+		Error: &WaferError{
 			Code:    code,
 			Message: message,
 			Meta:    meta,
@@ -79,65 +76,27 @@ func ErrorWithMeta(code, message string, meta map[string]string) *Result {
 	}
 }
 
-// Convenience error constructors for common error codes defined in the WAFER
-// specification. These follow the gRPC status code conventions for
-// interoperability.
+// Convenience error constructors for common error codes.
 
-// ErrBadRequest returns an error result with code "invalid_argument".
-func ErrBadRequest(message string) *Result {
-	return Error("invalid_argument", message)
+func ErrBadRequest(message string) *BlockResult      { return Error(ErrorCodeInvalidArgument, message) }
+func ErrNotFound(message string) *BlockResult         { return Error(ErrorCodeNotFound, message) }
+func ErrAlreadyExists(message string) *BlockResult    { return Error(ErrorCodeAlreadyExists, message) }
+func ErrPermissionDenied(message string) *BlockResult { return Error(ErrorCodePermissionDenied, message) }
+func ErrUnauthenticated(message string) *BlockResult  { return Error(ErrorCodeUnauthenticated, message) }
+func ErrUnavailable(message string) *BlockResult      { return Error(ErrorCodeUnavailable, message) }
+func ErrDeadlineExceeded(message string) *BlockResult { return Error(ErrorCodeDeadlineExceeded, message) }
+func ErrResourceExhausted(message string) *BlockResult {
+	return Error(ErrorCodeResourceExhausted, message)
 }
-
-// ErrNotFound returns an error result with code "not_found".
-func ErrNotFound(message string) *Result {
-	return Error("not_found", message)
+func ErrFailedPrecondition(message string) *BlockResult {
+	return Error(ErrorCodeFailedPrecondition, message)
 }
+func ErrInternal(message string) *BlockResult { return Error(ErrorCodeInternal, message) }
 
-// ErrAlreadyExists returns an error result with code "already_exists".
-func ErrAlreadyExists(message string) *Result {
-	return Error("already_exists", message)
-}
-
-// ErrPermissionDenied returns an error result with code "permission_denied".
-func ErrPermissionDenied(message string) *Result {
-	return Error("permission_denied", message)
-}
-
-// ErrUnauthenticated returns an error result with code "unauthenticated".
-func ErrUnauthenticated(message string) *Result {
-	return Error("unauthenticated", message)
-}
-
-// ErrUnavailable returns an error result with code "unavailable".
-func ErrUnavailable(message string) *Result {
-	return Error("unavailable", message)
-}
-
-// ErrDeadlineExceeded returns an error result with code "deadline_exceeded".
-func ErrDeadlineExceeded(message string) *Result {
-	return Error("deadline_exceeded", message)
-}
-
-// ErrResourceExhausted returns an error result with code "resource_exhausted".
-func ErrResourceExhausted(message string) *Result {
-	return Error("resource_exhausted", message)
-}
-
-// ErrFailedPrecondition returns an error result with code "failed_precondition".
-func ErrFailedPrecondition(message string) *Result {
-	return Error("failed_precondition", message)
-}
-
-// ErrInternal returns an error result with code "internal".
-func ErrInternal(message string) *Result {
-	return Error("internal", message)
-}
-
-// RespondWithStatus creates a Respond result with the given HTTP status code,
-// data, and content type.
-func RespondWithStatus(status int, data []byte, contentType string) *Result {
-	return &Result{
-		Action: Respond,
+// RespondWithStatus creates a Respond result with an HTTP status code.
+func RespondWithStatus(status int, data []byte, contentType string) *BlockResult {
+	return &BlockResult{
+		Action: ActionRespond,
 		Response: &Response{
 			Data: data,
 			Meta: map[string]string{
@@ -148,15 +107,14 @@ func RespondWithStatus(status int, data []byte, contentType string) *Result {
 	}
 }
 
-// JsonRespondStatus creates a Respond result by JSON-encoding the given value
-// with the specified HTTP status code.
-func JsonRespondStatus(status int, v any) *Result {
+// JsonRespondStatus creates a JSON Respond result with an HTTP status code.
+func JsonRespondStatus(status int, v any) *BlockResult {
 	data, err := json.Marshal(v)
 	if err != nil {
 		return ErrInternal("failed to marshal response: " + err.Error())
 	}
-	return &Result{
-		Action: Respond,
+	return &BlockResult{
+		Action: ActionRespond,
 		Response: &Response{
 			Data: data,
 			Meta: map[string]string{
@@ -167,12 +125,11 @@ func JsonRespondStatus(status int, v any) *Result {
 	}
 }
 
-// ErrorStatus creates an error Result with the given HTTP status code, error code,
-// and message.
-func ErrorStatus(status int, code, message string) *Result {
-	return &Result{
+// ErrorStatus creates an error BlockResult with an HTTP status code.
+func ErrorStatus(status int, code, message string) *BlockResult {
+	return &BlockResult{
 		Action: ActionError,
-		Err: &WaferError{
+		Error: &WaferError{
 			Code:    code,
 			Message: message,
 			Meta: map[string]string{
@@ -182,22 +139,13 @@ func ErrorStatus(status int, code, message string) *Result {
 	}
 }
 
-// ResponseBuilder provides a fluent API for constructing Response values with
-// chained method calls.
-//
-// Example usage:
-//
-//	result := wafer.NewResponseBuilder().
-//	    JSON(map[string]string{"status": "ok"}).
-//	    Meta("x-request-id", "abc123").
-//	    Respond()
+// ResponseBuilder provides a fluent API for constructing Response values.
 type ResponseBuilder struct {
 	data []byte
 	meta map[string]string
 }
 
-// NewResponseBuilder creates a new ResponseBuilder with an initialized
-// metadata map.
+// NewResponseBuilder creates a new ResponseBuilder.
 func NewResponseBuilder() *ResponseBuilder {
 	return &ResponseBuilder{
 		meta: make(map[string]string),
@@ -210,9 +158,7 @@ func (b *ResponseBuilder) Data(data []byte) *ResponseBuilder {
 	return b
 }
 
-// JSON sets the response payload by JSON-encoding the given value and sets
-// the content-type metadata to "application/json". If marshaling fails, the
-// data is set to nil.
+// JSON sets the response payload by JSON-encoding the given value.
 func (b *ResponseBuilder) JSON(v any) *ResponseBuilder {
 	data, err := json.Marshal(v)
 	if err != nil {
@@ -239,9 +185,9 @@ func (b *ResponseBuilder) Build() *Response {
 }
 
 // Respond creates a Respond result from the builder state.
-func (b *ResponseBuilder) Respond() *Result {
-	return &Result{
-		Action:   Respond,
+func (b *ResponseBuilder) Respond() *BlockResult {
+	return &BlockResult{
+		Action:   ActionRespond,
 		Response: b.Build(),
 	}
 }

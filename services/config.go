@@ -1,68 +1,30 @@
 package services
 
 import (
-	wafer "github.com/anthropics/wafer-sdk-go"
+	"github.com/wafer-run/wafer-sdk-go/gen/wafer/config"
 )
 
-// ConfigClient provides typed access to the WAFER configuration capability.
-// Configuration values are string key-value pairs managed by the runtime.
-type ConfigClient struct {
-	ctx *wafer.Context
-}
-
-// NewConfigClient creates a new ConfigClient bound to the given context.
-func NewConfigClient(ctx *wafer.Context) *ConfigClient {
-	return &ConfigClient{ctx: ctx}
-}
-
-// Get retrieves a configuration value by key. Returns the value and true if
-// the key exists, or an empty string and false if it does not.
-//
-// Message kind: "svc.config.get"
-// Meta: [["key", key]]
-func (c *ConfigClient) Get(key string) (string, bool) {
-	msg := &wafer.Message{
-		Kind: "svc.config.get",
-		Meta: map[string]string{
-			"key": key,
-		},
-	}
-	result := c.ctx.Send(msg)
-	if result.Action == wafer.ActionError || result.Response == nil {
+// ConfigGet retrieves a configuration value by key. Returns the value and true
+// if the key exists, or empty string and false if not.
+func ConfigGet(key string) (string, bool) {
+	v := config.Get(key)
+	if v == nil {
 		return "", false
 	}
-	return string(result.Response.Data), true
+	return *v, true
 }
 
-// GetDefault retrieves a configuration value by key, returning the provided
-// default value if the key does not exist.
-//
-// Message kind: "svc.config.get"
-// Meta: [["key", key]]
-func (c *ConfigClient) GetDefault(key, defaultValue string) string {
-	value, ok := c.Get(key)
-	if !ok {
+// ConfigGetDefault retrieves a configuration value, returning defaultValue if
+// the key does not exist.
+func ConfigGetDefault(key, defaultValue string) string {
+	v := config.Get(key)
+	if v == nil {
 		return defaultValue
 	}
-	return value
+	return *v
 }
 
-// Set sets a configuration value for the given key.
-//
-// Message kind: "svc.config.set"
-// Meta: [["key", key]]
-// Data: value string
-func (c *ConfigClient) Set(key, value string) error {
-	msg := &wafer.Message{
-		Kind: "svc.config.set",
-		Data: []byte(value),
-		Meta: map[string]string{
-			"key": key,
-		},
-	}
-	result := c.ctx.Send(msg)
-	if result.Action == wafer.ActionError && result.Err != nil {
-		return result.Err
-	}
-	return nil
+// ConfigSet sets a configuration value.
+func ConfigSet(key, value string) {
+	config.Set(key, value)
 }

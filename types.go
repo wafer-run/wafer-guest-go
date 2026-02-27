@@ -1,22 +1,15 @@
 package wafer
 
-// Message represents a message flowing through a WAFER chain. A message
-// contains a kind identifier, binary payload data, and string metadata.
+import "encoding/json"
+
+// Message represents a message flowing through a WAFER chain.
 type Message struct {
-	// Kind identifies the type of message, e.g. "user.create" or "order.process".
-	// Used for conditional routing via match patterns in chain configuration.
 	Kind string
-
-	// Data holds the message payload, typically JSON-encoded.
 	Data []byte
-
-	// Meta holds string key-value metadata such as headers, trace IDs, and
-	// authentication context.
 	Meta map[string]string
 }
 
-// GetMeta returns the metadata value for the given key, or an empty string
-// if the key is not present.
+// GetMeta returns the metadata value for the given key, or "" if absent.
 func (m *Message) GetMeta(key string) string {
 	if m.Meta == nil {
 		return ""
@@ -24,8 +17,7 @@ func (m *Message) GetMeta(key string) string {
 	return m.Meta[key]
 }
 
-// SetMeta sets a metadata key-value pair on the message. It initializes the
-// Meta map if it is nil.
+// SetMeta sets a metadata key-value pair on the message.
 func (m *Message) SetMeta(key, value string) {
 	if m.Meta == nil {
 		m.Meta = make(map[string]string)
@@ -33,33 +25,62 @@ func (m *Message) SetMeta(key, value string) {
 	m.Meta[key] = value
 }
 
+// Unmarshal deserializes the data payload as JSON.
+func (m *Message) Unmarshal(v interface{}) error {
+	return json.Unmarshal(m.Data, v)
+}
+
+// Continue returns a BlockResult that passes this message to the next block.
+func (m *Message) Continue() *BlockResult {
+	return &BlockResult{
+		Action:  ActionContinue,
+		Message: m,
+	}
+}
+
+// Respond returns a BlockResult that short-circuits with a response.
+func (m *Message) Respond(r *Response) *BlockResult {
+	return &BlockResult{
+		Action:   ActionRespond,
+		Response: r,
+		Message:  m,
+	}
+}
+
+// DropMsg returns a BlockResult that silently drops this message.
+func (m *Message) DropMsg() *BlockResult {
+	return &BlockResult{
+		Action:  ActionDrop,
+		Message: m,
+	}
+}
+
+// Err returns a BlockResult that short-circuits with an error.
+func (m *Message) Err(e *WaferError) *BlockResult {
+	return &BlockResult{
+		Action:  ActionError,
+		Error:   e,
+		Message: m,
+	}
+}
+
 // Action indicates what the runtime should do after a block processes a message.
 type Action int
 
 const (
-	// Continue tells the runtime to pass the message to the next block in the chain.
-	Continue Action = iota
-
-	// Respond tells the runtime to short-circuit the chain and return the
-	// response to the caller immediately.
-	Respond
-
-	// Drop tells the runtime to end the chain silently with no response.
-	Drop
-
-	// ActionError tells the runtime to short-circuit the chain and return an error
-	// to the caller immediately.
+	ActionContinue Action = iota
+	ActionRespond
+	ActionDrop
 	ActionError
 )
 
-// String returns the wire-format string representation of the Action.
 func (a Action) String() string {
 	switch a {
-	case Continue:
+	case ActionContinue:
 		return "continue"
-	case Respond:
+	case ActionRespond:
 		return "respond"
-	case Drop:
+	case ActionDrop:
 		return "drop"
 	case ActionError:
 		return "error"
@@ -68,84 +89,41 @@ func (a Action) String() string {
 	}
 }
 
-// ParseAction converts a wire-format action string to an Action value.
-// Unrecognized strings default to Continue.
-func ParseAction(s string) Action {
-	switch s {
-	case "continue":
-		return Continue
-	case "respond":
-		return Respond
-	case "drop":
-		return Drop
-	case "error":
-		return ActionError
-	default:
-		return Continue
-	}
-}
-
-// Response holds the data returned when a block short-circuits the chain
-// with a Respond action.
+// Response holds the data returned when a block short-circuits.
 type Response struct {
-	// Data is the response payload, typically JSON-encoded.
 	Data []byte
-
-	// Meta holds string key-value metadata for the response.
 	Meta map[string]string
 }
 
-// WaferError represents an error returned by a block. It contains a machine-
-// readable code, a human-readable message, and optional metadata.
+// WaferError represents an error returned by a block.
 type WaferError struct {
-	// Code is a machine-readable error code, e.g. "invalid_argument" or
-	// "not_found". See the WAFER specification for recommended codes.
-	Code string
-
-	// Message is a human-readable description of the error.
+	Code    string
 	Message string
-
-	// Meta holds optional string key-value metadata about the error.
-	Meta map[string]string
+	Meta    map[string]string
 }
 
-// Error implements the error interface so WaferError can be used as a
-// standard Go error.
 func (e *WaferError) Error() string {
 	return e.Code + ": " + e.Message
 }
 
-// Result is the outcome of processing a message. It tells the runtime what
-// action to take next and optionally carries a response or error payload.
-type Result struct {
-	// Action indicates what the runtime should do next.
-	Action Action
-
-	// Response holds the response data when Action is Respond.
+// BlockResult is the outcome of processing a message.
+type BlockResult struct {
+	Action   Action
 	Response *Response
-
-	// Err holds the error data when Action is ActionError.
-	Err *WaferError
+	Error    *WaferError
+	Message  *Message
 }
 
-// InstanceMode controls how many instances of a block are created and when.
+// InstanceMode controls how many instances of a block are created.
 type InstanceMode int
 
 const (
-	// PerNode creates one instance per chain node. This is the default mode.
 	PerNode InstanceMode = iota
-
-	// Singleton creates one instance shared across all chains.
 	Singleton
-
-	// PerChain creates one instance per chain, shared across nodes within that chain.
 	PerChain
-
-	// PerExecution creates a new instance for every message.
 	PerExecution
 )
 
-// String returns the wire-format string representation of the InstanceMode.
 func (m InstanceMode) String() string {
 	switch m {
 	case PerNode:
@@ -161,52 +139,19 @@ func (m InstanceMode) String() string {
 	}
 }
 
-// ParseInstanceMode converts a wire-format instance mode string to an
-// InstanceMode value. Unrecognized strings default to PerNode.
-func ParseInstanceMode(s string) InstanceMode {
-	switch s {
-	case "per-node":
-		return PerNode
-	case "singleton":
-		return Singleton
-	case "per-chain":
-		return PerChain
-	case "per-execution":
-		return PerExecution
-	default:
-		return PerNode
-	}
-}
-
-// BlockInfo declares the identity, interface, and instance lifecycle of a block.
+// BlockInfo declares the identity and configuration of a block.
 type BlockInfo struct {
-	// Name is the block identifier, e.g. "@example/myblock".
-	Name string
-
-	// Version is the semantic version of the block, e.g. "2.1.0".
-	Version string
-
-	// Interface declares what contract the block implements, e.g. "database@v1".
-	Interface string
-
-	// Summary is a brief human-readable description of this block implementation.
-	Summary string
-
-	// InstanceMode is the default instance lifecycle for this block.
+	Name         string
+	Version      string
+	Interface    string
+	Summary      string
 	InstanceMode InstanceMode
-
-	// AllowedModes lists the instance modes this block supports. If empty, all
-	// modes are permitted.
 	AllowedModes []InstanceMode
 }
 
-// LifecycleEvent represents a lifecycle event delivered to a block by the runtime.
+// LifecycleEvent represents a lifecycle event delivered to a block.
 type LifecycleEvent struct {
-	// Type identifies the lifecycle event kind.
 	Type LifecycleType
-
-	// Data holds event-specific payload. For Init events this is the block's
-	// configuration JSON.
 	Data []byte
 }
 
@@ -214,19 +159,11 @@ type LifecycleEvent struct {
 type LifecycleType int
 
 const (
-	// Init indicates the block is being initialized. Data contains the
-	// block's configuration JSON.
 	Init LifecycleType = iota
-
-	// Start indicates the chain is starting and is about to begin
-	// processing messages.
 	Start
-
-	// Stop indicates the chain is shutting down.
 	Stop
 )
 
-// String returns the wire-format string representation of the LifecycleType.
 func (t LifecycleType) String() string {
 	switch t {
 	case Init:
@@ -237,20 +174,5 @@ func (t LifecycleType) String() string {
 		return "stop"
 	default:
 		return "init"
-	}
-}
-
-// ParseLifecycleType converts a wire-format lifecycle type string to a
-// LifecycleType value. Unrecognized strings default to Init.
-func ParseLifecycleType(s string) LifecycleType {
-	switch s {
-	case "init":
-		return Init
-	case "start":
-		return Start
-	case "stop":
-		return Stop
-	default:
-		return Init
 	}
 }

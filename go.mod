@@ -1,3 +1,3 @@
-module github.com/anthropics/wafer-sdk-go
+module github.com/wafer-run/wafer-sdk-go
 
 go 1.22

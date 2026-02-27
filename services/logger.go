@@ -1,57 +1,28 @@
 package services
 
 import (
-	wafer "github.com/anthropics/wafer-sdk-go"
+	"github.com/wafer-run/wafer-sdk-go/gen/wafer/logger"
 )
 
-// LoggerClient provides typed access to the WAFER logging capability. Log
-// messages are sent to the runtime which handles output formatting and routing.
-type LoggerClient struct {
-	ctx *wafer.Context
+// LogField is a convenience alias for the WIT-generated LogField.
+type LogField = logger.LogField
+
+// LogDebug sends a debug-level log message.
+func LogDebug(msg string, fields ...LogField) {
+	logger.Debug(msg, fields)
 }
 
-// NewLoggerClient creates a new LoggerClient bound to the given context.
-func NewLoggerClient(ctx *wafer.Context) *LoggerClient {
-	return &LoggerClient{ctx: ctx}
+// LogInfo sends an info-level log message.
+func LogInfo(msg string, fields ...LogField) {
+	logger.Info(msg, fields)
 }
 
-// log sends a log message at the given level.
-func (l *LoggerClient) log(level, message string) {
-	msg := &wafer.Message{
-		Kind: "svc.logger." + level,
-		Data: []byte(message),
-	}
-	l.ctx.Send(msg)
+// LogWarn sends a warning-level log message.
+func LogWarn(msg string, fields ...LogField) {
+	logger.Warn(msg, fields)
 }
 
-// Debug sends a debug-level log message.
-//
-// Message kind: "svc.logger.debug"
-// Data: message string
-func (l *LoggerClient) Debug(message string) {
-	l.log("debug", message)
-}
-
-// Info sends an info-level log message.
-//
-// Message kind: "svc.logger.info"
-// Data: message string
-func (l *LoggerClient) Info(message string) {
-	l.log("info", message)
-}
-
-// Warn sends a warning-level log message.
-//
-// Message kind: "svc.logger.warn"
-// Data: message string
-func (l *LoggerClient) Warn(message string) {
-	l.log("warn", message)
-}
-
-// Error sends an error-level log message.
-//
-// Message kind: "svc.logger.error"
-// Data: message string
-func (l *LoggerClient) Error(message string) {
-	l.log("error", message)
+// LogError sends an error-level log message.
+func LogError(msg string, fields ...LogField) {
+	logger.Error(msg, fields)
 }
